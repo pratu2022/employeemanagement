@@ -1,0 +1,2 @@
+Emp ID: 2, Name: nikita, Annual: 20, Sick: 8, Casual: 8
+Emp ID: 2, Name: nikita, Annual: 20, Sick: 10, Casual: 6
