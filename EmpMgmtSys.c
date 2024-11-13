@@ -4,6 +4,7 @@
 #include<stdlib.h>
 #include<time.h>
 #include <windows.h> 
+#include <stdbool.h>
 
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
@@ -112,8 +113,6 @@ void displayWelcomeMessage() {
 
     printf(ANSI_COLOR_MAGENTA"\n\n\n\t\t\t\t   Presented by - Bendre Pratiksha\n\n\t\t\t\t\t\t  Gurav Smital\n\n\t\t\t\t\t\t  Patel Twincy \n\n\t\t\t\t\t\t  Sachan Siya" ANSI_COLOR_RESET);
 }
-
-
 
 void main()
 {
@@ -571,7 +570,7 @@ void HR_login()
 				printf("\t\t\t\t\t 5.View All Attendance\n");
 				printf("\t\t\t\t\t 6.View Employee Leave (Approve / Reject)\n");
 				printf("\t\t\t\t\t 7.View Leave Balance\n");
-				printf("\t\t\t\t\t 8.ChangeEmployeePassword\n");
+				printf("\t\t\t\t\t 8.Change Password\n");
 				printf("\t\t\t\t\t 9.Profile\n");
 				printf("\t\t\t\t\t 10.Logout\n");
 				printf("\t\t\t\t\t 0.Exit\n");
@@ -659,34 +658,42 @@ void HR_login()
 }
 }
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 void viewLeaveBalance(int emp_id) {
-    FILE *fp;
+    FILE *fp_balance;
+    int id, balance;
+    char name[50], leaveType[20];
     int found = 0;
 
-    fp = fopen("LeaveBalances.txt", "rb");
-    if (fp == NULL) {
-        printf("Error opening Employee file!\n");
+    fp_balance = fopen("LeaveBalances.txt", "r");
+    if (fp_balance == NULL) {
+        printf("Error: Could not open LeaveBalances.txt.\n");
         return;
     }
-    
-    int  annualLeave, sickLeave, casualLeave;
-    char emp_name[30];
 
-    printf("\n==================== Leave Balance ====================\n");
+    printf("\n\t\t\t=================== Leave Balance for Employee ID: %d ===================\n", emp_id);
 
-     while (fscanf(fp, "Emp ID: %d, Name: %29[^,], Annual: %d, Sick: %d, Casual: %d\n",
-                  &emp_id, &emp_name, &annualLeave, &sickLeave, &casualLeave) == 5) {
-        printf("%d\t\t%-15s\t%d\t%d\t%d\n", emp_id, emp_name, annualLeave, sickLeave, casualLeave);
+    // Read each line in LeaveBalances.txt and check if it matches the employee ID
+    while (fscanf(fp_balance, "Emp ID: %d, Name: %49[^,], Leave Type: %19[^,], %*[^:]: %d\n", 
+                  &id, name, leaveType, &balance) != EOF) {
+        if (id == emp_id) {
+            found = 1;
+            printf("\t\t\tEmployee Name       :   %s\n", name);
+            printf("\t\t\tLeave Type          :   %s\n", leaveType);
+            printf("\t\t\tRemaining Balance   :   %d days\n", balance);
+            printf("\n\t\t\t-------------------------------------------------------------------\n");
+        }
     }
 
-//    if (!found) {
-//        printf("Employee ID %d not found.\n", emp_id);
-//    }
+    if (!found) {
+        printf("No leave balance record found for Employee ID %d.\n", emp_id);
+    }
 
-    fclose(fp);
+    fclose(fp_balance);
 }
-
 
 
 // Function to calculate the number of days between two dates
@@ -750,24 +757,29 @@ void approveLeave(int emp_id) {
                     if (e.Emp_id == emp_id) {
                         if (strcmp(leave.type, "Annual") == 0 && e.annualLeave >= leave_days) {
                             e.annualLeave -= leave_days;
-                            strcpy(leave.status, "Approved");
+                            strcpy(leave.status, "Approved");  
                             printf("Annual leave approved. Remaining balance: %d days.\n", e.annualLeave);
+                             fprintf(fp_balance, "Emp ID: %d, Name: %s,Leave Type: Annual, Annual: %d\n", 
+                                e.Emp_id, e.Emp_name, e.annualLeave);
                         } else if (strcmp(leave.type, "Sick") == 0 && e.sickLeave >= leave_days) {
                             e.sickLeave -= leave_days;
                             strcpy(leave.status, "Approved");
                             printf("Sick leave approved. Remaining balance: %d days.\n", e.sickLeave);
+                             fprintf(fp_balance, "Emp ID: %d, Name: %s,Leave Type: Sick, Sick: %d\n", 
+                                e.Emp_id, e.Emp_name, e.sickLeave);
+                                
                         } else if (strcmp(leave.type, "Casual") == 0 && e.casualLeave >= leave_days) {
                             e.casualLeave -= leave_days;
                             strcpy(leave.status, "Approved");
                             printf("Casual leave approved. Remaining balance: %d days.\n", e.casualLeave);
+                            fprintf(fp_balance, "Emp ID: %d, Name: %s,Leave Type: Sick, Casual: %d\n", 
+                                e.Emp_id, e.Emp_name, e.casualLeave);
                         } else {
                             strcpy(leave.status, "Rejected");
                             printf("Insufficient leave balance. Leave request rejected.\n");
                         }
 
                         // Log updated balance to LeaveBalances.txt
-                        fprintf(fp_balance, "Emp ID: %d, Name: %s, Annual: %d, Sick: %d, Casual: %d\n", 
-                                e.Emp_id, e.Emp_name, e.annualLeave, e.sickLeave, e.casualLeave);
                     }
                     fwrite(&e, sizeof(e), 1, temp_emp);
                 }
@@ -970,6 +982,7 @@ void Manage_Employee()
 {
 		//printf("manage employee..");
 		int choice;
+		int eid;
 			while(1)
 			{
 				printf("\n\t\t\t\t\t 1.Add Employee\n");
@@ -1264,31 +1277,41 @@ void removeDept() {
  }
 
 //Search Department (By Id)
-void searchDept()
-{
-	int did;
-	system("cls");
-	printf("\n\t\t\t :::::::::::::::: Search Department(Id) ::::::::::::::::\n\n");
-	printf(" Enter Department Id : ");
-	scanf("%d",&did);
-	printf("\n\t\t\t ::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n\n");
-	fp = fopen("Department.txt","rb");
-	
-	while(fread(&d, sizeof(d), 1, fp) == 1)
-	{
-		if(did == d.Dept_id)
-		{
-			printf("\n\t\t\t=======================Department ID : %d=========================\n\n",d.Dept_id);
-			printf("\t\t\t\t Department ID         -   %d\n",d.Dept_id);
-			printf("\t\t\t\t Department Name       -   %s\n",d.Dept_name);
-			printf("\t\t\t\t Location              -   %s\n",d.Location);
-			printf("\t\t\t\t Date of Registration  -   %s\n",d.Regitered_date);
-			printf("\n\t\t\t===================================================================\n");
-			
-		}
-		fclose(fp);	
-	}
- }
+void searchDept() {
+    int did;
+    int found = 0; // To check if the department ID exists
+    system("cls");
+    printf("\n\t\t\t :::::::::::::::: Search Department(Id) ::::::::::::::::\n\n");
+    printf(" Enter Department Id : ");
+    scanf("%d", &did);
+    printf("\n\t\t\t ::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n\n");
+
+    fp = fopen("Department.txt", "rb");
+    if (fp == NULL) {
+        printf("Error opening Department file!\n");
+        return;
+    }
+
+    while (fread(&d, sizeof(d), 1, fp) == 1) {
+        if (did == d.Dept_id) {
+            found = 1;
+            printf("\n\t\t\t======================= Department ID : %d =========================\n\n", d.Dept_id);
+            printf("\t\t\t\t Department ID         -   %d\n", d.Dept_id);
+            printf("\t\t\t\t Department Name       -   %s\n", d.Dept_name);
+            printf("\t\t\t\t Location              -   %s\n", d.Location);
+            printf("\t\t\t\t Date of Registration  -   %s\n", d.Regitered_date);
+            printf("\n\t\t\t===================================================================\n");
+            break; // Stop searching once the department is found
+        }
+    }
+
+    if (!found) {
+        printf("\n\t\t\t No record found for Department ID: %d\n", did);
+    }
+
+    fclose(fp); // Close file after reading all records
+}
+
  
  //Sorting Department
  void sort_Department() {
@@ -1338,91 +1361,217 @@ void searchDept()
 }
 
 //Search Department (By Name)
-void searchDeptName()
-{
-	char dname[20];
-	system("cls");
-	printf("\n\t\t\t :::::::::::::::: Search Department(Name) ::::::::::::::::\n\n");
-	printf("\t\t\t Enter Department Name : ");
-	fflush(stdin);
-	gets(dname);
-	printf("\n\t\t\t :::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n\n");
-	fp = fopen("Department.txt","rb");
-	
-	while(fread(&d, sizeof(d), 1, fp) == 1)
-	{
-		if(strcmp(dname,d.Dept_name) == 0)
-		{
-			printf("\n\t\t\t================================================\n\n",d.Dept_id);
-			printf("\t\t\t\t Department ID         -   %d\n",d.Dept_id);
-			printf("\t\t\t\t Department Name       -   %s\n",d.Dept_name);
-			printf("\t\t\t\t Location              -   %s\n",d.Location);
-			printf("\t\t\t\t Date of Registration  -   %s\n",d.Regitered_date);
-			printf("\n\t\t\t=================================================\n");
-			
-		}
-		fclose(fp);	
-	}
- }
- 
+void searchDeptName() {
+    char dname[20];
+    int found = 0; // To check if the department name exists
+    system("cls");
+    printf("\n\t\t\t :::::::::::::::: Search Department(Name) ::::::::::::::::\n\n");
+    printf("\t\t\t Enter Department Name : ");
+    fflush(stdin);
+    gets(dname);
+    printf("\n\t\t\t :::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n\n");
+
+    fp = fopen("Department.txt", "rb");
+    if (fp == NULL) {
+        printf("Error opening Department file!\n");
+        return;
+    }
+
+    while (fread(&d, sizeof(d), 1, fp) == 1) {
+        if (strcmp(dname, d.Dept_name) == 0) {
+            found = 1;
+            printf("\n\t\t\t================================================\n\n");
+            printf("\t\t\t\t Department ID         -   %d\n", d.Dept_id);
+            printf("\t\t\t\t Department Name       -   %s\n", d.Dept_name);
+            printf("\t\t\t\t Location              -   %s\n", d.Location);
+            printf("\t\t\t\t Date of Registration  -   %s\n", d.Regitered_date);
+            printf("\n\t\t\t=================================================\n");
+            break; // Stop searching once the department is found
+        }
+    }
+
+    if (!found) {
+        printf("\n\t\t\t No record found for Department Name: %s\n", dname);
+    }
+
+    fclose(fp); // Close file after reading all records
+}
+
 //********************************************** End Of Department Functions **************************************************
 	
 //********************************************** Start of Employee Functions ***********************************************************	
 //Add Employee
-void Add_Emp()
-{
+
+bool isEmpIdExist(int empId) {
+	FILE *fpCheck = fopen("Employee.txt", "rb");
+	if (fpCheck == NULL) {
+		printf("Error opening file.\n");
+		return false;
+	}
+
+	//Employee temp;
+	while (fread(&e, sizeof(e), 1, fpCheck) == 1) {
+		if (e.Emp_id == empId) {
+			fclose(fpCheck);
+			return true;
+		}
+	}
+	fclose(fpCheck);
+	return false;
+}
+
+bool isEmailExist(const char *email) {
+	FILE *fpCheck = fopen("Employee.txt", "rb");
+	if (fpCheck == NULL) {
+		printf("Error opening file.\n");
+		return false;
+	}
+
+	while (fread(&e, sizeof(e), 1, fpCheck) == 1) {
+		if (strcmp(e.Emp_Email, email) == 0) {
+			fclose(fpCheck);
+			return true;
+		}
+	}
+	fclose(fpCheck);
+	return false;
+}
+
+
+void Add_Emp() {
 	system("cls");
 	char again = 'y';
-	while(again == 'y')
-	{
+	while (again == 'y') {
 		printf("\n\t\t\t :::::::::::::::: Adding new Employee ::::::::::::::::\n\n");
-		fp = fopen("Employee.txt","ab");
+		fp = fopen("Employee.txt", "ab");
+		if (fp == NULL) {
+			printf("Error opening file.\n");
+			return;
+		}
 		
-			char myDate[12];
-			time_t t = time(NULL);
-			struct tm tm = *localtime(&t);
-			sprintf(myDate,"%02d/%02d/%d",tm.tm_mday,tm.tm_mon+1,tm.tm_year + 1900);
-			strcpy(e.Regitered_date,myDate);
-	
-		printf("\t\t\t Enter Emp-id :: ");
-		scanf("%d",&e.Emp_id);
-		printf("\t\t\t Enter Employee Name :: ");
-		fflush(stdin);
-		gets(e.Emp_name);
-		printf("\t\t\t Enter Employee Gender :: ");
-		scanf("%s",&e.Emp_Gender);
-		printf("\t\t\t Enter Employee Age :: ");
-		scanf("%d",&e.Emp_Age);
-		printf("\t\t\t Enter Employee Contact :: ");
-		scanf("%s",&e.Emp_Contact);
-		printf("\t\t\t Enter Employee Base Salary (Hourly) :: ");
-        scanf("%f",&e.Base_Salary);
-        printf("\t\t\t Enter Employee Hours Worked :: ");
-    	scanf("%d", &e.hoursWorked);
-        printf("\t\t\t Enter Employee Role :: ");
-		scanf("%s",&e.Emp_Role);
-		printf("\t\t\t Enter Employee Email :: ");
-		fflush(stdin);
-		gets(e.Emp_Email);
-		printf("\t\t\t Enter Employee Password :: ");
-		gets(e.Emp_Password);
+		char myDate[12];
+		time_t t = time(NULL);
+		struct tm tm = *localtime(&t);
+		sprintf(myDate, "%02d/%02d/%d", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
+		strcpy(e.Regitered_date, myDate);
+
+		// Validate Employee ID (must be positive)
+	do {
+			printf("\t\t\t Enter Emp-id :: ");
+			scanf("%d", &e.Emp_id);
+			if (e.Emp_id <= 0) {
+				printf(ANSI_COLOR_RED "\t\t\t Invalid Employee ID! Please enter a positive number.\n" ANSI_COLOR_RESET);
+				return;
+			} else if (isEmpIdExist(e.Emp_id)) {
+				printf(ANSI_COLOR_RED "\t\t\t Employee ID already exists! Please enter a different ID.\n"ANSI_COLOR_RESET);
+				return;
+			}
+			
+		} while (e.Emp_id <= 0 && isEmpIdExist(e.Emp_id));
 		
+		// Validate Employee Name (non-empty)
+		do {
+			printf("\t\t\t Enter Employee Name :: ");
+			fflush(stdin);
+			gets(e.Emp_name);
+			if (strlen(e.Emp_name) == 0) {
+				printf("\t\t\t Invalid Name! Please enter a non-empty name.\n");
+			}
+		} while (strlen(e.Emp_name) == 0);
+
+		// Validate Gender (M/F/O)
+		do {
+			printf("\t\t\t Enter Employee Gender (M/F/O) :: ");
+			scanf("%s", e.Emp_Gender);
+			if (strcmp(e.Emp_Gender, "M") != 0 && strcmp(e.Emp_Gender, "F") != 0 && strcmp(e.Emp_Gender, "O") != 0) {
+				printf("\t\t\t Invalid Gender! Please enter M, F, or O.\n");
+			}
+		} while (strcmp(e.Emp_Gender, "M") != 0 && strcmp(e.Emp_Gender, "F") != 0 && strcmp(e.Emp_Gender, "O") != 0);
+
+		// Validate Age (must be between 18 and 65)
+		do {
+			printf("\t\t\t Enter Employee Age :: ");
+			scanf("%d", &e.Emp_Age);
+			if (e.Emp_Age < 18 || e.Emp_Age > 65) {
+				printf("\t\t\t Invalid Age! Please enter a valid age between 18 and 65.\n");
+			}
+		} while (e.Emp_Age < 18 || e.Emp_Age > 65);
+
+		// Validate Contact (only digits, 10 characters)
+		do {
+			printf("\t\t\t Enter Employee Contact (10 digits) :: ");
+			scanf("%s", e.Emp_Contact);
+			if (strlen(e.Emp_Contact) != 10 || strspn(e.Emp_Contact, "0123456789") != 10) {
+				printf("\t\t\t Invalid Contact! Please enter a 10-digit number.\n");
+			}
+		} while (strlen(e.Emp_Contact) != 10 || strspn(e.Emp_Contact, "0123456789") != 10);
+
+		// Validate Base Salary (must be positive)
+		do {
+			printf("\t\t\t Enter Employee Base Salary (Hourly) :: ");
+			scanf("%f", &e.Base_Salary);
+			if (e.Base_Salary <= 0) {
+				printf("\t\t\t Invalid Salary! Please enter a positive value.\n");
+			}
+		} while (e.Base_Salary <= 0);
+
+		// Validate Hours Worked (must be non-negative)
+		do {
+			printf("\t\t\t Enter Employee Hours Worked :: ");
+			scanf("%d", &e.hoursWorked);
+			if (e.hoursWorked <= 0) {
+				printf("\t\t\t Invalid Hours! Please enter a non-negative number.\n");
+			}
+		} while (e.hoursWorked <= 0);
+
+		// Validate Employee Role (non-empty)
+		do {
+			printf("\t\t\t Enter Employee Role :: ");
+			scanf("%s", e.Emp_Role);
+			if (strlen(e.Emp_Role) == 0) {
+				printf("\t\t\t Invalid Role! Please enter a non-empty role.\n");
+			}
+		} while (strlen(e.Emp_Role) == 0);
+
+		// Validate Email (simple check for '@' and '.')
+	do {
+			printf("\t\t\t Enter Employee Email :: ");
+			fflush(stdin);
+			gets(e.Emp_Email);
+			if (strchr(e.Emp_Email, '@') == NULL || strchr(e.Emp_Email, '.') == NULL) {
+				printf("\t\t\t Invalid Email! Please enter a valid email address.\n");
+				return;
+			} else if (isEmailExist(e.Emp_Email)) {
+				printf("\t\t\t Email already exists! Please enter a different email.\n");
+				return;
+			}
+		} while (strchr(e.Emp_Email, '@') == NULL && strchr(e.Emp_Email, '.') == NULL && isEmailExist(e.Emp_Email));
+
+		// Validate Password (minimum length)
+		do {
+			printf("\t\t\t Enter Employee Password (minimum 6 characters) :: ");
+			gets(e.Emp_Password);
+			if (strlen(e.Emp_Password) < 6) {
+				printf("\t\t\t Invalid Password! Please enter at least 6 characters.\n");
+			}
+		} while (strlen(e.Emp_Password) < 6);
+
 		e.annualLeave = 20;
 		e.sickLeave = 10;
 		e.casualLeave = 8;
-		
+
 		printf("\n\t\t\t :::::::::::::::::::::::::::::::::::::::::::::::::::::: \n\n");
-		
-		printf(ANSI_COLOR_YELLOW"\n\t\t\t Want to enter another record (y/n)? : "ANSI_COLOR_RESET);
-		fflush(stdin); 
-		scanf("%c", &again); 
-		
-		printf(ANSI_COLOR_GREEN"\n\t\t\t Employee Added Successfully! "ANSI_COLOR_RESET);
-		printf(ANSI_COLOR_GREEN "\n\nPress Any Key to continue....... "ANSI_COLOR_RESET);
+		printf("\n\t\t\t Want to enter another record (y/n)? : ");
+		fflush(stdin);
+		scanf("%c", &again);
+
+		printf("\n\t\t\t Employee Added Successfully! ");
+		printf("\n\nPress Any Key to continue....... ");
 		getch();
-		
-		fwrite(&e,sizeof(e),1,fp);
-		fclose(fp);	
+
+		fwrite(&e, sizeof(e), 1, fp);
+		fclose(fp);
+		system("cls");
 	}
 }
 
@@ -1628,100 +1777,124 @@ void removeEmp() {
  }
  
 //Employee Search By Id
-void searchEmp()
-{
-	int eid;
-	system("cls");
-	printf("\n\t\t\t :::::::::::::::: Search Employee(Id) ::::::::::::::::\n\n");
-	printf(" Enter Employee Id : ");
-	scanf("%d",&eid);
-	
-	fp = fopen("Employee.txt","rb");
-	
-	while(fread(&e, sizeof(e), 1, fp) == 1)
-	{
-		if(eid == e.Emp_id)
-		{
-			printf("\n\t\t\t\t======================= Employee ID : %d =========================\n\n",e.Emp_id);
-			printf("\t\t\t\tEmployee ID         -   %d\n",e.Emp_id);
-			printf("\t\t\t\tEmployee Name       -   %s\n",e.Emp_name);
-			printf("\t\t\t\tEmployee Gender     -   %s\n",e.Emp_Gender);
-			printf("\t\t\t\tEmployee Age        -   %d\n",e.Emp_Age);
-			printf("\t\t\t\tEmployee Contact    -   %d\n",e.Emp_Contact);
-			printf("\t\t\t\tEmployee Email      -   %s\n",e.Emp_Email);
-			printf("\t\t\t\tDate of Registration-   %s\n",e.Regitered_date);
-			printf("\n\t\t\t\t===============================================================\n");
-			
-		}
-		fclose(fp);	
-	}
- }
- 
-//Employee Search By Name
-void searchEmpName()
-{
-	char ename[20];
-	system("cls");
-	printf("\n\t\t\t :::::::::::::::: Search Employee(Name) ::::::::::::::::\n\n");
-	printf(" Enter Employee Name : ");
-	fflush(stdin);
-	gets(ename);
-	
-	fp = fopen("Employee.txt","rb");
-	
-	while(fread(&e, sizeof(e), 1, fp) == 1)
-	{
-		if(strcmp(ename,e.Emp_name) == 0)
-		{
-			printf("\n\t\t\t================================================\n\n");
-			printf("\t\t\t\tEmployee ID         -   %d\n",e.Emp_id);
-			printf("\t\t\t\tEmployee Name       -   %s\n",e.Emp_name);
-			printf("\t\t\t\tEmployee Gender     -   %s\n",e.Emp_Gender);
-			printf("\t\t\t\tEmployee Age        -   %d\n",e.Emp_Age);
-			printf("\t\t\t\tEmployee Contact    -   %d\n",e.Emp_Contact);
-			printf("\t\t\t\tEmployee Email      -   %s\n",e.Emp_Email);
-			printf("\t\t\t\tDate of Registration-   %s\n",e.Regitered_date);
-			printf("\n\t\t\t================================================\n");
-			
-		}
-		fclose(fp);	
-	}
- }
- 
-//Salary wise (Employee)
-void SalaryWiseDisplay()
-{
- 	float From,To;
- 	system("cls");
- 	printf("\n\t\t\t :::::::::::::::: Salary Wise(Employees) ::::::::::::::::\n\n");
- 	printf("From :: ");
- 	scanf("%f",&From);
- 	printf("To :: ");
- 	scanf("%f",&To);
- 	
- 	fp = fopen("Employee.txt","rb");
- 	
- 	while(fread(&e, sizeof(e), 1, fp) == 1)
-	{
-		if(e.Base_Salary <= From && e.Base_Salary >=To)
-		{
-			printf("\n\t\t\t================================================\n\n");
-			printf("\t\t\t\tEmployee ID         -   %d\n",e.Emp_id);
-			printf("\t\t\t\tEmployee Name       -   %s\n",e.Emp_name);
-			printf("\t\t\t\tEmployee Gender     -   %s\n",e.Emp_Gender);
-			printf("\t\t\t\tEmployee Age        -   %d\n",e.Emp_Age);
-			printf("\t\t\t\tEmployee Contact    -   %d\n",e.Emp_Contact);
-			printf("\t\t\t\tEmployee Base Salary-   %f\n",e.Base_Salary);
-			printf("\t\t\t\tEmployee Role       -   %d\n",e.Emp_Role);
-			printf("\t\t\t\tEmployee Email      -   %s\n",e.Emp_Email);
-			printf("\t\t\t\tDate of Registration-   %s\n",e.Regitered_date);
-			printf("\n\t\t\t================================================\n");
-		}
-		fclose(fp);
-	
+void searchEmp() {
+    int eid, found = 0;
+    system("cls");
+    printf("\n\t\t\t :::::::::::::::: Search Employee (by ID) ::::::::::::::::\n\n");
+    printf(" Enter Employee ID: ");
+    scanf("%d", &eid);
+
+    fp = fopen("Employee.txt", "rb");
+    if (fp == NULL) {
+        printf("Error: Could not open file.\n");
+        return;
     }
- 	
- }
+
+    while (fread(&e, sizeof(e), 1, fp) == 1) {
+        if (eid == e.Emp_id) {
+            printf("\n\t\t\t\t======================= Employee ID: %d =========================\n\n", e.Emp_id);
+            printf("\t\t\t\tEmployee ID         -   %d\n", e.Emp_id);
+            printf("\t\t\t\tEmployee Name       -   %s\n", e.Emp_name);
+            printf("\t\t\t\tEmployee Gender     -   %s\n", e.Emp_Gender);
+            printf("\t\t\t\tEmployee Age        -   %d\n", e.Emp_Age);
+            printf("\t\t\t\tEmployee Contact    -   %d\n", e.Emp_Contact);
+            printf("\t\t\t\tEmployee Email      -   %s\n", e.Emp_Email);
+            printf("\t\t\t\tDate of Registration-   %s\n", e.Regitered_date);
+            printf("\n\t\t\t\t===============================================================\n");
+            found = 1;
+            break;  // Stop searching as the employee is found
+        }
+    }
+
+    fclose(fp);
+
+    if (!found) {
+        printf("\n\t\t\tNo employee found with ID: %d\n", eid);
+    }
+}
+
+
+
+//Employee Search By Name
+void searchEmpName() {
+    char ename[20];
+    int found = 0;
+    system("cls");
+    printf("\n\t\t\t :::::::::::::::: Search Employee (by Name) ::::::::::::::::\n\n");
+    printf(" Enter Employee Name: ");
+    getchar(); // To handle any leftover newline character in the buffer
+    fgets(ename, sizeof(ename), stdin);
+    ename[strcspn(ename, "\n")] = 0;  // Remove the newline character from fgets input
+
+    fp = fopen("Employee.txt", "rb");
+    if (fp == NULL) {
+        printf("Error: Could not open file.\n");
+        return;
+    }
+
+    while (fread(&e, sizeof(e), 1, fp) == 1) {
+        if (strcmp(ename, e.Emp_name) == 0) {
+            printf("\n\t\t\t================================================\n\n");
+            printf("\t\t\t\tEmployee ID         -   %d\n", e.Emp_id);
+            printf("\t\t\t\tEmployee Name       -   %s\n", e.Emp_name);
+            printf("\t\t\t\tEmployee Gender     -   %s\n", e.Emp_Gender);
+            printf("\t\t\t\tEmployee Age        -   %d\n", e.Emp_Age);
+            printf("\t\t\t\tEmployee Contact    -   %d\n", e.Emp_Contact);
+            printf("\t\t\t\tEmployee Email      -   %s\n", e.Emp_Email);
+            printf("\t\t\t\tDate of Registration-   %s\n", e.Regitered_date);
+            printf("\n\t\t\t================================================\n");
+            found = 1;
+        }
+    }
+
+    fclose(fp);
+
+    if (!found) {
+        printf("\n\t\t\tNo employee found with the name: %s\n", ename);
+    }
+}
+
+//Salary wise (Employee)
+void SalaryWiseDisplay() {
+    float From, To;
+    int found = 0;
+    system("cls");
+    printf("\n\t\t\t :::::::::::::::: Salary Wise (Employees) ::::::::::::::::\n\n");
+    printf("From: ");
+    scanf("%f", &From);
+    printf("To: ");
+    scanf("%f", &To);
+
+    fp = fopen("Employee.txt", "rb");
+    if (fp == NULL) {
+        printf("Error: Could not open file.\n");
+        return;
+    }
+
+    while (fread(&e, sizeof(e), 1, fp) == 1) {
+        if (e.Base_Salary >= From && e.Base_Salary <= To) {  // Corrected condition
+            printf("\n\t\t\t================================================\n\n");
+            printf("\t\t\t\tEmployee ID         -   %d\n", e.Emp_id);
+            printf("\t\t\t\tEmployee Name       -   %s\n", e.Emp_name);
+            printf("\t\t\t\tEmployee Gender     -   %s\n", e.Emp_Gender);
+            printf("\t\t\t\tEmployee Age        -   %d\n", e.Emp_Age);
+            printf("\t\t\t\tEmployee Contact    -   %d\n", e.Emp_Contact);
+            printf("\t\t\t\tEmployee Base Salary-   %.2f\n", e.Base_Salary);
+            printf("\t\t\t\tEmployee Role       -   %s\n", e.Emp_Role);
+            printf("\t\t\t\tEmployee Email      -   %s\n", e.Emp_Email);
+            printf("\t\t\t\tDate of Registration-   %s\n", e.Regitered_date);
+            printf("\n\t\t\t================================================\n");
+            found = 1;
+        }
+    }
+
+    fclose(fp);
+
+    if (!found) {
+        printf("\n\t\t\tNo employees found with a salary between %.2f and %.2f.\n", From, To);
+    }
+}
+
 //********************************************** End Of Employee Functions ***********************************************************	
  
 //************************************************ Start Of Project (Functions) *************************************************
@@ -1895,64 +2068,81 @@ void DisplayProject() {
 	fclose(fp);
  }
  
- void searchProject()
-{
-	int pid;
-	system("cls");
-	printf("\n\t\t\t :::::::::::::::: Search Project(Id) ::::::::::::::::\n\n");
-	printf(" Enter Employee Id : ");
-	scanf("%d",&pid);
-	
-	fp = fopen("Employee.txt","rb");
-	
-	while(fread(&p, sizeof(p), 1, fp) == 1)
-	{
-		if(pid == p.Pro_id)
-		{
-			printf("\n\t\t\t\t======================= Project ID : %d =========================\n\n",e.Emp_id);
-			printf("\t\t\t\t Project ID           -   %d\n",p.Pro_id);
-			printf("\t\t\t\t Project Name         -   %s\n",p.Pro_Name);
-			printf("\t\t\t\t Project Cost         -   %\fn",p.Project_cost);
-			printf("\t\t\t\t Employee Name        -   %s\n",p.Emp_Name);
-			printf("\t\t\t\t Date of Registration -   %s\n",p.Regitered_date);
-			printf("\n\t\t\t\t===============================================================\n");
-			
-		}
-		fclose(fp);	
-	}
- }
+void searchProject() {
+    int pid;
+    int found = 0;  // Flag to check if project is found
+    system("cls");
+    printf("\n\t\t\t :::::::::::::::: Search Project (ID) ::::::::::::::::\n\n");
+    printf(" Enter Project ID: ");
+    scanf("%d", &pid);
+    
+    FILE *fp = fopen("Project.txt", "rb");
+    if (fp == NULL) {
+        printf("Error: Could not open file.\n");
+        return;
+    }
+    
+    while (fread(&p, sizeof(p), 1, fp) == 1) {
+        if (pid == p.Pro_id) {
+            printf("\n\t\t\t\t======================= Project ID: %d =========================\n\n", p.Pro_id);
+            printf("\t\t\t\t Project ID           -   %d\n", p.Pro_id);
+            printf("\t\t\t\t Project Name         -   %s\n", p.Pro_Name);
+            printf("\t\t\t\t Project Cost         -   %.2f\n", p.Project_cost);
+            printf("\t\t\t\t Employee Name        -   %s\n", p.Emp_Name);
+            printf("\t\t\t\t Date of Registration -   %s\n", p.Regitered_date);
+            printf("\n\t\t\t\t===============================================================\n");
+            found = 1;  // Set flag to indicate project was found
+            break;
+        }
+    }
+
+    fclose(fp);
+
+    if (!found) {
+        printf("\n\t\t\tNo project found with ID: %d\n", pid);
+    }
+}
+
+ 
+ 
  
  //Salary wise (Employee)
-void CostWiseDisplay()
-{
- 	float From,To;
- 	system("cls");
- 	printf("\n\t\t\t :::::::::::::::: Records Based On Cost(Range) ::::::::::::::::\n\n");
- 	printf("From :: ");
- 	scanf("%f",&From);
- 	printf("To :: ");
- 	scanf("%f",&To);
- 	
- 	fp = fopen("Employee.txt","rb");
- 	
- 	while(fread(&p, sizeof(p), 1, fp) == 1)
-	{
-		if(p.Project_cost <= From && p.Project_cost >=To)
-		{
-			printf("\n\t\t\t================================================\n\n");
-			printf("\t\t\t\t Project ID         -   %d\n",p.Pro_id);
-			printf("\t\t\t\t Project Name       -   %s\n",p.Pro_Name);
-			printf("\t\t\t\t Project Cost       -   %f\n",p.Project_cost);
-			printf("\t\t\t\t Employee Name      -   %d\n",p.Emp_Name);
-			printf("\t\t\t\tDate of Registration-   %s\n",e.Regitered_date);
-			printf("\n\t\t\t================================================\n");
-		}
-		fclose(fp);
-	
+void CostWiseDisplay() {
+    float From, To;
+    int found = 0;
+    system("cls");
+    printf("\n\t\t\t :::::::::::::::: Records Based On Cost (Range) ::::::::::::::::\n\n");
+    printf("From: ");
+    scanf("%f", &From);
+    printf("To: ");
+    scanf("%f", &To);
+
+    FILE *fp = fopen("Project.txt", "rb");
+    if (fp == NULL) {
+        printf("Error: Could not open file.\n");
+        return;
     }
- 	
- }
- 
+
+    while (fread(&p, sizeof(p), 1, fp) == 1) {
+        if (p.Project_cost >= From && p.Project_cost <= To) {  // Corrected condition
+            printf("\n\t\t\t================================================\n\n");
+            printf("\t\t\t\t Project ID         -   %d\n", p.Pro_id);
+            printf("\t\t\t\t Project Name       -   %s\n", p.Pro_Name);
+            printf("\t\t\t\t Project Cost       -   %.2f\n", p.Project_cost);
+            printf("\t\t\t\t Employee Name      -   %s\n", p.Emp_Name);
+            printf("\t\t\t\t Date of Registration-   %s\n", p.Regitered_date);
+            printf("\n\t\t\t================================================\n");
+            found = 1;
+        }
+    }
+
+    fclose(fp);
+
+    if (!found) {
+        printf("\n\t\t\tNo projects found with a cost between %.2f and %.2f.\n", From, To);
+    }
+}
+
  
  void sort_Project() {
     FILE *fp = fopen("Project.txt", "rb");
