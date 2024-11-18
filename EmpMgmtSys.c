@@ -23,6 +23,52 @@
 #define PROJECTS_PER_PAGE 2
 #define MAX_PROJECTS 100
 
+
+void displayIntroduction();
+void displayWelcomeMessage();
+void Admin_login();
+void Employee_login();
+void HR_login();
+void ChangeEmployeePassword(int empId);
+void requestLeave(int emp_id);
+void markAttendance(int emp_id, char *emp_name);
+void viewAssignedProjects(char *empName);
+void calculatePayroll(int emp_id);
+void viewSalarySlip(int emp_id);
+void display_Department();
+void display_Employee();
+void Add_Dept();
+void Manage_Department();
+void Manage_Employee();
+void Manage_Project();
+void AttendanceList();
+void approveLeave(int emp_id);
+void viewLeaveBalance(int emp_id);
+void sort_Employee();
+void sort_Department();
+void sort_Project();
+void removeDept();
+void removeEmp();
+void removeProject();
+void searchDept();
+void searchEmp();
+void searchProject();
+void searchDeptName();
+void searchEmpName();
+void SalaryWiseDisplay();
+void CostWiseDisplay();
+void displayLeaveRequests();
+void displayAttendanceList();
+void displayPayroll();
+void viewEmployeeList();
+void viewLeaveBalances();
+void DepartmentModify();
+void Add_Emp();
+void EmployeeModify();
+void Add_Project();
+void DisplayProject();
+void ProjectModify();
+
 //Department Structure
 struct Department
 {
@@ -146,7 +192,7 @@ void displayWelcomeMessage() {
     printf("\n\n\n");
     printf(ANSI_COLOR_CYAN"\t\t\t#####################################################################\n");
     printf("\t\t\t#                                                                   #\n");
-    printf("\t\t\t#      :::::::::::: Employee Management System (EMS) ::::::::::::     #\n");
+    printf("\t\t\t#      :::::::::::: Employee Management System (EMS) ::::::::::::   #\n");
     printf("\t\t\t#                                                                   #\n");
     printf("\t\t\t#####################################################################\n" ANSI_COLOR_RESET);
     printf("\n\n");
@@ -460,7 +506,6 @@ void ChangeEmployeePassword(int empId) {
                 if (strcmp(newPassword, confirmPassword) == 0) {
                     // Update the password in the struct
                     strcpy(e.Emp_Password, newPassword);
-
                     // Move file pointer back to the start of the current record
                     fseek(fp, -sizeof(e), SEEK_CUR);
 
@@ -1529,7 +1574,6 @@ bool isEmpIdExist(int empId) {
 	fclose(fpCheck);
 	return false;
 }
-
 bool isEmailExist(const char *email) {
 	FILE *fpCheck = fopen("Employee.txt", "rb");
 	if (fpCheck == NULL) {
@@ -1537,8 +1581,9 @@ bool isEmailExist(const char *email) {
 		return false;
 	}
 
-	while (fread(&e, sizeof(e), 1, fpCheck) == 1) {
-		if (strcmp(e.Emp_Email, email) == 0) {
+	 struct Employee temp;
+	while (fread(&temp, sizeof(temp), 1, fpCheck) == 1) {
+		if (strcmp(temp.Emp_Email, email) == 0) {
 			fclose(fpCheck);
 			return true;
 		}
@@ -1552,6 +1597,7 @@ void Add_Emp() {
 	system("cls");
 	char again = 'y';
 	while (again == 'y') {
+		struct Employee ep;
 		printf("\n\t\t\t :::::::::::::::: Adding new Employee ::::::::::::::::\n\n");
 		fp = fopen("Employee.txt", "ab");
 		if (fp == NULL) {
@@ -1563,112 +1609,116 @@ void Add_Emp() {
 		time_t t = time(NULL);
 		struct tm tm = *localtime(&t);
 		sprintf(myDate, "%02d/%02d/%d", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
-		strcpy(e.Regitered_date, myDate);
+		strcpy(ep.Regitered_date, myDate);
 
 		// Validate Employee ID (must be positive)
 	do {
 			printf("\t\t\t Enter Emp-id :: ");
-			scanf("%d", &e.Emp_id);
-			if (e.Emp_id <= 0) {
+			scanf("%d", &ep.Emp_id);
+			if (ep.Emp_id <= 0) {
 				printf(ANSI_COLOR_RED "\t\t\t Invalid Employee ID! Please enter a positive number.\n" ANSI_COLOR_RESET);
 				return;
-			} else if (isEmpIdExist(e.Emp_id)) {
+			} else if (isEmpIdExist(ep.Emp_id)) {
 				printf(ANSI_COLOR_RED "\t\t\t Employee ID already exists! Please enter a different ID.\n"ANSI_COLOR_RESET);
 				return;
 			}
 			
-		} while (e.Emp_id <= 0 && isEmpIdExist(e.Emp_id));
+		} while (ep.Emp_id <= 0 && isEmpIdExist(ep.Emp_id));
 		
 		// Validate Employee Name (non-empty)
 		do {
 			printf("\t\t\t Enter Employee Name :: ");
 			fflush(stdin);
-			gets(e.Emp_name);
-			if (strlen(e.Emp_name) == 0) {
+			gets(ep.Emp_name);
+			if (strlen(ep.Emp_name) == 0) {
 				printf(ANSI_COLOR_RED"\t\t\t Invalid Name! Please enter a non-empty name.\n" ANSI_COLOR_RESET);
 			}
-		} while (strlen(e.Emp_name) == 0);
+		} while (strlen(ep.Emp_name) == 0);
 
 		// Validate Gender (M/F/O)
 		do {
 			printf("\t\t\t Enter Employee Gender (M/F/O) :: ");
-			scanf("%s", e.Emp_Gender);
-			if (strcmp(e.Emp_Gender, "M") != 0 && strcmp(e.Emp_Gender, "F") != 0 && strcmp(e.Emp_Gender, "O") != 0) {
+			fflush(stdin);
+			scanf("%s", ep.Emp_Gender);
+			if (strcmp(ep.Emp_Gender, "M") != 0 && strcmp(ep.Emp_Gender, "F") != 0 && strcmp(ep.Emp_Gender, "O") != 0) {
 				printf(ANSI_COLOR_RED"\t\t\t Invalid Gender! Please enter M, F, or O.\n" ANSI_COLOR_RESET);
 			}
-		} while (strcmp(e.Emp_Gender, "M") != 0 && strcmp(e.Emp_Gender, "F") != 0 && strcmp(e.Emp_Gender, "O") != 0);
+		} while (strcmp(ep.Emp_Gender, "M") != 0 && strcmp(ep.Emp_Gender, "F") != 0 && strcmp(ep.Emp_Gender, "O") != 0);
 
 		// Validate Age (must be between 18 and 65)
 		do {
 			printf("\t\t\t Enter Employee Age :: ");
-			scanf("%d", &e.Emp_Age);
-			if (e.Emp_Age < 18 || e.Emp_Age > 65) {
+			fflush(stdin);
+			scanf("%d", &ep.Emp_Age);
+			if (ep.Emp_Age < 18 || ep.Emp_Age > 65) {
 				printf(ANSI_COLOR_RED "\t\t\t Invalid Age! Please enter a valid age between 18 and 65.\n" ANSI_COLOR_RESET);
 			}
-		} while (e.Emp_Age < 18 || e.Emp_Age > 65);
+		} while (ep.Emp_Age < 18 || ep.Emp_Age > 65);
 
 		// Validate Contact (only digits, 10 characters)
 		do {
 			printf("\t\t\t Enter Employee Contact (10 digits) :: ");
-			scanf("%s", e.Emp_Contact);
-			if (strlen(e.Emp_Contact) != 10 || strspn(e.Emp_Contact, "0123456789") != 10) {
+			fflush(stdin);
+			scanf("%s", ep.Emp_Contact);
+			if (strlen(ep.Emp_Contact) != 10 || strspn(ep.Emp_Contact, "0123456789") != 10) {
 				printf(ANSI_COLOR_RED "\t\t\t Invalid Contact! Please enter a 10-digit number.\n" ANSI_COLOR_RESET);
 			}
-		} while (strlen(e.Emp_Contact) != 10 || strspn(e.Emp_Contact, "0123456789") != 10);
+		} while (strlen(ep.Emp_Contact) != 10 || strspn(ep.Emp_Contact, "0123456789") != 10);
 
 		// Validate Base Salary (must be positive)
 		do {
 			printf("\t\t\t Enter Employee Base Salary (Hourly) :: ");
-			scanf("%f", &e.Base_Salary);
-			if (e.Base_Salary <= 0) {
+			fflush(stdin);
+			scanf("%f", &ep.Base_Salary);
+			if (ep.Base_Salary <= 0) {
 				printf(ANSI_COLOR_RED "\t\t\t Invalid Salary! Please enter a positive value.\n"ANSI_COLOR_RESET );
 			}
-		} while (e.Base_Salary <= 0);
+		} while (ep.Base_Salary <= 0);
 
 		// Validate Hours Worked (must be non-negative)
 		do {
 			printf("\t\t\t Enter Employee Hours Worked :: ");
-			scanf("%d", &e.hoursWorked);
-			if (e.hoursWorked <= 0) {
+			scanf("%d", &ep.hoursWorked);
+			if (ep.hoursWorked <= 0) {
 				printf(ANSI_COLOR_RED "\t\t\t Invalid Hours! Please enter a non-negative number.\n"ANSI_COLOR_RESET);
 			}
-		} while (e.hoursWorked <= 0);
+		} while (ep.hoursWorked <= 0);
 
 		// Validate Employee Role (non-empty)
 		do {
 			printf("\t\t\t Enter Employee Role :: ");
-			scanf("%s", e.Emp_Role);
-			if (strlen(e.Emp_Role) == 0) {
+			fflush(stdin);
+			scanf("%s", ep.Emp_Role);
+			if (strlen(ep.Emp_Role) == 0) {
 				printf(ANSI_COLOR_RED "\t\t\t Invalid Role! Please enter a non-empty role.\n" ANSI_COLOR_RESET);
 			}
-		} while (strlen(e.Emp_Role) == 0);
+		} while (strlen(ep.Emp_Role) == 0);
 
 		// Validate Email (simple check for '@' and '.')
 	do {
 			printf("\t\t\t Enter Employee Email :: ");
 			fflush(stdin);
-			gets(e.Emp_Email);
-			if (strchr(e.Emp_Email, '@') == NULL || strchr(e.Emp_Email, '.') == NULL) {
-				printf( ANSI_COLOR_RED "\t\t\t Invalid Email! Please enter a valid email address.\n" ANSI_COLOR_RESET);
-				return;
-			} else if (isEmailExist(e.Emp_Email)) {
-				printf( ANSI_COLOR_RED "\t\t\t Email already exists! Please enter a different email.\n" ANSI_COLOR_RESET);
+			gets(ep.Emp_Email);
+			if (strchr(ep.Emp_Email, '@') == NULL || strchr(ep.Emp_Email, '.') == NULL) {
+				printf(ANSI_COLOR_RED "\t\t\t Invalid Email! Please enter a valid email address.\n"ANSI_COLOR_RESET);
+			} else if (isEmailExist(ep.Emp_Email)) {
+				printf(ANSI_COLOR_RED "\t\t\t Email already exists! Please enter a different email.\n"ANSI_COLOR_RESET);
 				return;
 			}
-		} while (strchr(e.Emp_Email, '@') == NULL && strchr(e.Emp_Email, '.') == NULL && isEmailExist(e.Emp_Email));
+		} while (strchr(ep.Emp_Email, '@') == NULL || strchr(ep.Emp_Email, '.') == NULL || isEmailExist(ep.Emp_Email));
 
 		// Validate Password (minimum length)
 		do {
 			printf("\t\t\t Enter Employee Password (minimum 6 characters) :: ");
-			gets(e.Emp_Password);
-			if (strlen(e.Emp_Password) < 6) {
+			gets(ep.Emp_Password);
+			if (strlen(ep.Emp_Password) < 6) {
 				printf(ANSI_COLOR_RED "\t\t\t Invalid Password! Please enter at least 6 characters.\n" ANSI_COLOR_RESET);
 			}
-		} while (strlen(e.Emp_Password) < 6);
+		} while (strlen(ep.Emp_Password) < 6);
 
-		e.annualLeave = 20;
-		e.sickLeave = 10;
-		e.casualLeave = 8;
+		ep.annualLeave = 20;
+		ep.sickLeave = 10;
+		ep.casualLeave = 8;
 
 		printf("\n\t\t\t :::::::::::::::::::::::::::::::::::::::::::::::::::::: \n\n");
 		printf(ANSI_COLOR_YELLOW"\n\t\t\t Want to enter another record (y/n)? : " ANSI_COLOR_RESET);
@@ -1677,7 +1727,7 @@ void Add_Emp() {
 		printf(ANSI_COLOR_GREEN"\n\t\t\t Employee Added Successfully! ");
 		printf("\n\nPress Any Key to continue....... " ANSI_COLOR_RESET);
 		getch();
-		fwrite(&e, sizeof(e), 1, fp);
+		fwrite(&ep, sizeof(ep), 1, fp);
 		fclose(fp);
 		system("cls");
 	}
@@ -2006,47 +2056,93 @@ void SalaryWiseDisplay() {
 //********************************************** End Of Employee Functions ***********************************************************	
  
 //************************************************ Start Of Project (Functions) *************************************************
- void Add_Project()
-{
-	system("cls");
-	char again = 'y';
-	while(again == 'y')
-	{
-		printf("\n\t\t\t :::::::::::::::: Adding new Project ::::::::::::::::\n\n");
-		fp = fopen("Project.txt","ab");
-		
-			char myDate[12];
-			time_t t = time(NULL);
-			struct tm tm = *localtime(&t);
-			sprintf(myDate,"%02d/%02d/%d",tm.tm_mday,tm.tm_mon+1,tm.tm_year + 1900);
-			strcpy(p.Regitered_date,myDate);
-	
-		printf("\t\t\t Enter Project-id :: ");
-		scanf("%d",&p.Pro_id);
-		printf("\t\t\t Enter Project Name :: ");
-		fflush(stdin);
-		gets(p.Pro_Name);
-		printf("\t\t\t Enter Employee Name :: ");
-		fflush(stdin);
-		gets(p.Emp_Name);
-		printf("\t\t\t Project Cost : ");
-        scanf("%f",&p.Project_cost);
-		
-		printf("\n\t\t\t :::::::::::::::::::::::::::::::::::::::::::::::::::::: \n\n");
-		
-		printf(ANSI_COLOR_YELLOW"\n\t\t\t Want to enter another record (y/n)? : "ANSI_COLOR_RESET);
-		fflush(stdin); 
-		scanf("%c", &again); 
-		
-		printf(ANSI_COLOR_GREEN"\n\t\t\t Project Added Successfully! "ANSI_COLOR_RESET);
-		printf(ANSI_COLOR_GREEN "\n\nPress Any Key to continue....... "ANSI_COLOR_RESET);
-		getch();
-		
-		fwrite(&p,sizeof(p),1,fp);
-		fclose(fp);	
-	}
+
+
+int validate_project_id(int id) {
+    return id > 0; // Ensure Pro_id is positive
 }
 
+int validate_project_cost(float cost) {
+    return cost >= 0; // Ensure Project_cost is non-negative
+}
+
+int validate_name(const char *name) {
+    return strlen(name) > 0; // Ensure name is not empty
+}
+void Add_Project()
+{
+    system("cls");
+    char again = 'y';
+    while (again == 'y')
+    {
+        printf("\n\t\t\t :::::::::::::::: Adding new Project ::::::::::::::::\n\n");
+        fp = fopen("Project.txt", "ab");
+
+        if (fp == NULL) {
+            printf("Error opening file.\n");
+            return;  // Exit if file cannot be opened
+        }
+
+        char myDate[12];
+        time_t t = time(NULL);
+        struct tm tm = *localtime(&t);
+        sprintf(myDate, "%02d/%02d/%d", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
+        strcpy(p.Regitered_date, myDate);
+
+        // Validate Project ID
+        do {
+            printf("\t\t\t Enter Project-id (positive integer): ");
+            scanf("%d", &p.Pro_id);
+            if (!validate_project_id(p.Pro_id)) {
+                printf(ANSI_COLOR_RED "\t\t\t Invalid Project ID. Please enter a positive integer.\n"ANSI_COLOR_RESET);
+            }
+        } while (!validate_project_id(p.Pro_id));
+
+        // Validate Project Name
+        do {
+            printf("\t\t\t Enter Project Name: ");
+            fflush(stdin);
+            gets(p.Pro_Name);
+            if (!validate_name(p.Pro_Name)) {
+                printf(ANSI_COLOR_RED "\t\t\t Invalid input. Project name cannot be empty.\n" ANSI_COLOR_RESET);
+            }
+        } while (!validate_name(p.Pro_Name));
+
+        // Validate Employee Name
+        do {
+            printf("\t\t\t Enter Employee Name: ");
+            fflush(stdin);
+            gets(p.Emp_Name);
+            if (!validate_name(p.Emp_Name)) {
+                printf(ANSI_COLOR_RED "\t\t\t Invalid input. Employee name cannot be empty.\n"ANSI_COLOR_RESET);
+            }
+        } while (!validate_name(p.Emp_Name));
+
+        // Validate Project Cost
+        do {
+            printf("\t\t\t Project Cost (non-negative): ");
+            scanf("%f", &p.Project_cost);
+            if (!validate_project_cost(p.Project_cost)) {
+                printf(ANSI_COLOR_RED "\t\t\t Invalid cost. Please enter a non-negative value.\n" ANSI_COLOR_RESET);
+            }
+        } while (!validate_project_cost(p.Project_cost));
+
+        printf("\n\t\t\t :::::::::::::::::::::::::::::::::::::::::::::::::::::: \n\n");
+
+        printf(ANSI_COLOR_YELLOW "\n\t\t\t Want to enter another record (y/n)? : " ANSI_COLOR_RESET);
+        fflush(stdin);
+        scanf("%c", &again);
+
+        if (again == 'y' || again == 'Y') {
+            printf(ANSI_COLOR_GREEN "\n\t\t\t Project Added Successfully! " ANSI_COLOR_RESET);
+            printf(ANSI_COLOR_GREEN "\n\nPress Any Key to continue....... " ANSI_COLOR_RESET);
+            getch();
+        }
+
+        fwrite(&p, sizeof(p), 1, fp);
+        fclose(fp);
+    }
+}
 
 void DisplayProject() {
     system("cls");
@@ -2168,8 +2264,11 @@ void DisplayProject() {
             scanf("%s",&p.Project_cost);
             printf("\t\t\t Modify Employee name : ");
             gets(p.Emp_Name);
-            fseek(fp ,-sizeof(d),SEEK_CUR);
-            fwrite(&d,sizeof(d),1,fp);
+//            fseek(fp ,-sizeof(d),SEEK_CUR);
+//            fwrite(&d,sizeof(d),1,fp);
+            fseek(fp, -sizeof(p), SEEK_CUR);
+			fwrite(&p, sizeof(p), 1, fp);
+
             break;
 		}
 	}
